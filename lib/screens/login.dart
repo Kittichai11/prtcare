@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+import 'register.dart';
+import 'google_login.dart';
+import 'apple_login.dart';
+import 'home_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -85,16 +89,16 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 const SizedBox(height: 24),
 
-                // Primary Login Button "เข้าสู่ระบบ"
+                // Primary Login Button "เข้าสู่ระบบ" -> Navigate to HomeScreen
                 SizedBox(
                   height: 52,
                   child: ElevatedButton(
                     onPressed: () {
                       if (_formKey.currentState!.validate()) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('กำลังเข้าสู่ระบบ...'),
-                            backgroundColor: Color(0xFF673D17),
+                        Navigator.pushReplacement(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const HomeScreen(),
                           ),
                         );
                       }
@@ -119,14 +123,14 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 const SizedBox(height: 16),
 
-                // Register Link "สมัครสมาชิก"
+                // Register Link "สมัครสมาชิก" -> Navigate to RegisterScreen
                 Center(
                   child: TextButton(
                     onPressed: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('ไปที่หน้าสมัครสมาชิก'),
-                          backgroundColor: Color(0xFF673D17),
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const RegisterScreen(),
                         ),
                       );
                     },
@@ -174,19 +178,22 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 const SizedBox(height: 20),
 
-                // Social Login Button 1: Google
+                // Social Login Button 1: Google -> Navigate to GoogleLoginScreen
                 _buildSocialButton(
                   iconWidget: const GoogleLogoWidget(),
                   label: 'เข้าสู่ระบบด้วย Google',
                   onTap: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('เข้าสู่ระบบด้วย Google')),
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const GoogleLoginScreen(),
+                      ),
                     );
                   },
                 ),
                 const SizedBox(height: 14),
 
-                // Social Login Button 2: Apple
+                // Social Login Button 2: Apple -> Navigate to AppleLoginScreen
                 _buildSocialButton(
                   iconWidget: const Icon(
                     Icons.apple,
@@ -195,8 +202,11 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   label: 'เข้าสู่ระบบด้วย Apple',
                   onTap: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('เข้าสู่ระบบด้วย Apple')),
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const AppleLoginScreen(),
+                      ),
                     );
                   },
                 ),
