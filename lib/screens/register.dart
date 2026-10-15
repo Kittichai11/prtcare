@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../models/pet_data.dart';
+import 'home_screen.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -57,10 +59,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
               children: [
                 // Header Subtitle
                 const Text(
-                  'กรอกข้อมูลเพื่อสร้างบัญชี PetCare',
+                  'กรอกข้อมูลเพื่อสร้างบัญชีใหม่สำหรับระบบ PetCare',
                   textAlign: TextAlign.center,
                   style: TextStyle(
-                    fontSize: 16,
+                    fontSize: 15,
                     color: Color(0xFF7A6551),
                     fontWeight: FontWeight.w500,
                   ),
@@ -140,19 +142,45 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 ),
                 const SizedBox(height: 28),
 
-                // Register Action Button
+                // Register Action Button -> Create real account!
                 SizedBox(
                   height: 52,
                   child: ElevatedButton(
                     onPressed: () {
                       if (_formKey.currentState!.validate()) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('สมัครสมาชิกสำเร็จแล้ว!'),
-                            backgroundColor: Color(0xFF673D17),
-                          ),
+                        final error = PetDataStore.registerNewUser(
+                          email: _emailController.text,
+                          password: _passwordController.text,
+                          fullName: _fullNameController.text,
+                          phone: _phoneController.text,
                         );
-                        Navigator.of(context).pop();
+
+                        if (error != null) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(error),
+                              backgroundColor: Colors.red[700],
+                            ),
+                          );
+                        } else {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                'สร้างบัญชีสำเร็จ! ยินดีต้อนรับคุณ ${_fullNameController.text}',
+                              ),
+                              backgroundColor: const Color(0xFF673D17),
+                            ),
+                          );
+
+                          // Go directly to HomeScreen as a fresh user!
+                          Navigator.pushAndRemoveUntil(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const HomeScreen(),
+                            ),
+                            (route) => false,
+                          );
+                        }
                       }
                     },
                     style: ElevatedButton.styleFrom(
@@ -164,7 +192,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       ),
                     ),
                     child: const Text(
-                      'ลงทะเบียน',
+                      'ลงทะเบียนสร้าง ID ใหม่',
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,

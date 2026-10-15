@@ -44,7 +44,7 @@ class _DogWalkingScreenState extends State<DogWalkingScreen> {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     const Text(
-                      'ตั้งวันและเวลา Dog Walking',
+                      'ตั้งวันและเวลา PETS Walking',
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         fontSize: 20,
@@ -251,7 +251,7 @@ class _DogWalkingScreenState extends State<DogWalkingScreen> {
                           Navigator.of(context).pop();
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(
-                              content: Text('บันทึกกำหนดการ Dog Walking เรียบร้อยแล้ว'),
+                              content: Text('บันทึกกำหนดการ PETS Walking เรียบร้อยแล้ว'),
                               backgroundColor: Color(0xFF673D17),
                             ),
                           );
@@ -304,7 +304,7 @@ class _DogWalkingScreenState extends State<DogWalkingScreen> {
           onPressed: () => Navigator.of(context).pop(),
         ),
         title: const Text(
-          'Dog Walking & ออกกำลังกาย',
+          'PETS Walking & ออกกำลังกาย',
           style: TextStyle(
             color: Color(0xFF5C3A21),
             fontWeight: FontWeight.bold,
@@ -405,7 +405,7 @@ class _DogWalkingScreenState extends State<DogWalkingScreen> {
                             Icon(Icons.directions_walk_rounded, size: 64, color: Colors.brown[300]),
                             const SizedBox(height: 12),
                             const Text(
-                              'ยังไม่มีกำหนดการ Dog Walking\nกดปุ่มด้านล่างเพื่อตั้งวันและเวลาเดินเล่น',
+                              'ยังไม่มีกำหนดการ PETS Walking\nกดปุ่มด้านล่างเพื่อตั้งวันและเวลาเดินเล่น',
                               textAlign: TextAlign.center,
                               style: TextStyle(fontSize: 16, color: Color(0xFF8C735B)),
                             ),

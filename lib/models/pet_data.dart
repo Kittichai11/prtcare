@@ -1,13 +1,13 @@
 class PetItem {
   final String id;
   String name;
-  String category; // ประเภทสัตว์เลี้ยง e.g. 'สุนัข', 'แมว', 'กระต่าย', 'นก'
-  String breed;    // สายพันธุ์
-  String age;      // อายุ
-  String gender;   // 'ผู้ ♂' or 'เมีย ♀'
-  bool isSpayed;   // สถานะทำหมัน (เฉพาะเพศเมีย)
-  String weight;   // น้ำหนัก e.g. '8.5 กก.'
-  String history;  // ประวัติของสัตว์เลี้ยง
+  String category;
+  String breed;
+  String age;
+  String gender;
+  bool isSpayed;
+  String weight;
+  String history;
   String? imagePath;
 
   PetItem({
@@ -44,7 +44,7 @@ class VaccineAppointmentItem {
   String date;
   int daysLeft;
   String reminderTime;
-  String type; // 'วัคซีน' or 'ตรวจสุขภาพ'
+  String type;
 
   VaccineAppointmentItem({
     required this.id,
@@ -108,136 +108,215 @@ class NotificationItem {
   });
 }
 
+class UserAccount {
+  String email;
+  String password;
+  String fullName;
+  String phone;
+  String? profileImagePath;
+  List<PetItem> pets;
+  List<FeedingItem> feedings;
+  List<VaccineAppointmentItem> vaccines;
+  List<DogWalkingItem> dogWalkings;
+  List<MedicalRecordItem> records;
+  List<NotificationItem> notifications;
+
+  UserAccount({
+    required this.email,
+    required this.password,
+    required this.fullName,
+    required this.phone,
+    this.profileImagePath,
+    List<PetItem>? pets,
+    List<FeedingItem>? feedings,
+    List<VaccineAppointmentItem>? vaccines,
+    List<DogWalkingItem>? dogWalkings,
+    List<MedicalRecordItem>? records,
+    List<NotificationItem>? notifications,
+  })  : pets = pets ?? [],
+        feedings = feedings ?? [],
+        vaccines = vaccines ?? [],
+        dogWalkings = dogWalkings ?? [],
+        records = records ?? [],
+        notifications = notifications ?? [];
+}
+
 class OwnerProfile {
   String name;
   String email;
   String phone;
+  String? imagePath;
 
   OwnerProfile({
     required this.name,
     required this.email,
     required this.phone,
+    this.imagePath,
   });
 }
 
 class PetDataStore {
-  static OwnerProfile currentProfile = OwnerProfile(
-    name: 'GGez',
-    email: 'ggez.petowner@gmail.com',
-    phone: '081-234-5678',
-  );
-
-  static List<PetItem> petsList = [
-    PetItem(
-      id: '1',
-      name: 'Doge',
-      category: 'สุนัข',
-      breed: 'ชิบะ',
-      age: '2 ปี 4 เดือน',
-      gender: 'ผู้ ♂',
-      isSpayed: false,
-      weight: '8.5 กก.',
-      history: 'วัคซีนครบตามกำหนด สุขภาพร่าเริง แจ่มใส ชอบทานอาหารเม็ดรสไก่',
+  // Registered Accounts Database
+  static final List<UserAccount> registeredAccounts = [
+    UserAccount(
+      email: 'ggez.petowner@gmail.com',
+      password: '123456',
+      fullName: 'GGez',
+      phone: '081-234-5678',
+      pets: [
+        PetItem(
+          id: '1',
+          name: 'Doge',
+          category: 'สุนัข',
+          breed: 'ชิบะ',
+          age: '2 ปี 4 เดือน',
+          gender: 'ผู้ ♂',
+          isSpayed: false,
+          weight: '8.5 กก.',
+          history: 'วัคซีนครบตามกำหนด สุขภาพร่าเริง แจ่มใส ชอบทานอาหารเม็ดรสไก่',
+        ),
+      ],
+      feedings: [],
+      vaccines: [],
+      dogWalkings: [],
+      records: [],
+      notifications: [],
     ),
   ];
+
+  static UserAccount? currentUserAccount;
+
+  static UserAccount get currentUser {
+    currentUserAccount ??= registeredAccounts.first;
+    return currentUserAccount!;
+  }
+
+  static OwnerProfile get currentProfile => OwnerProfile(
+        name: currentUser.fullName,
+        email: currentUser.email,
+        phone: currentUser.phone,
+        imagePath: currentUser.profileImagePath,
+      );
+
+  static List<PetItem> get petsList => currentUser.pets;
 
   static int activePetIndex = 0;
 
-  static PetItem get activePet => petsList[activePetIndex];
+  static PetItem? get activePet {
+    if (petsList.isEmpty) return null;
+    if (activePetIndex >= petsList.length) {
+      activePetIndex = 0;
+    }
+    return petsList[activePetIndex];
+  }
 
-  static List<FeedingItem> feedingList = [
-    FeedingItem(
-      id: '1',
-      title: 'ให้อาหารเช้า',
-      time: '08:00 น.',
-      isNearTime: false,
-    ),
-    FeedingItem(
-      id: '2',
-      title: 'ให้อาหารเย็น',
-      time: '18:00 น.',
-      isNearTime: true,
-    ),
-  ];
+  static List<FeedingItem> get feedingList => currentUser.feedings;
+  static List<VaccineAppointmentItem> get vaccineList => currentUser.vaccines;
+  static List<DogWalkingItem> get dogWalkingList => currentUser.dogWalkings;
+  static List<MedicalRecordItem> get recordList => currentUser.records;
+  static List<NotificationItem> get notificationList => currentUser.notifications;
 
-  static List<VaccineAppointmentItem> vaccineList = [
-    VaccineAppointmentItem(
-      id: '1',
-      title: 'นัดพบสัตวแพทย์',
-      date: '31 ส.ค. 2026',
-      daysLeft: 25,
-      reminderTime: '10:00 น.',
-      type: 'ตรวจสุขภาพ',
-    ),
-    VaccineAppointmentItem(
-      id: '2',
-      title: 'วัคซีนพิษสุนัขบ้า',
-      date: '15 ส.ค. 2026',
-      daysLeft: 9,
-      reminderTime: '09:00 น.',
-      type: 'วัคซีน',
-    ),
-  ];
+  // Real Authentication Methods
+  static String? registerNewUser({
+    required String email,
+    required String password,
+    required String fullName,
+    required String phone,
+  }) {
+    final normalizedEmail = email.trim().toLowerCase();
+    final existingIndex = registeredAccounts.indexWhere(
+      (acc) => acc.email.trim().toLowerCase() == normalizedEmail,
+    );
 
-  static List<DogWalkingItem> dogWalkingList = [
-    DogWalkingItem(
-      id: '1',
-      title: 'พาสัตว์เลี้ยงออกไปเดินเล่นประจำวัน',
-      time: '17:00 น.',
-      daysOrDate: 'ทุกวันเย็น',
-      activityType: 'เดินเล่น',
-      duration: '30 นาที',
-    ),
-    DogWalkingItem(
-      id: '2',
-      title: 'วิ่งออกกำลังกายสวนสาธารณะ',
-      time: '07:00 น.',
-      daysOrDate: 'เสาร์-อาทิตย์',
-      activityType: 'วิ่งออกกำลังกาย',
-      duration: '45 นาที',
-    ),
-  ];
+    if (existingIndex != -1) {
+      return 'อีเมลนี้ถูกใช้งานลงทะเบียนในระบบแล้ว';
+    }
 
-  static List<MedicalRecordItem> recordList = [
-    MedicalRecordItem(
-      id: '1',
-      title: 'ตรวจสุขภาพประจำปีและฉีดวัคซีนรวม',
-      date: '10 มิ.ย. 2026',
-      clinic: 'โรงพยาบาลสัตว์ทองหล่อ',
-      details: 'น้ำหนัก 8.5 กก. สุขภาพสมบูรณ์ดี ไม่พบพยาธิ',
-      doctor: 'สพ.ญ. สมศรี ใจดี',
-    ),
-    MedicalRecordItem(
-      id: '2',
-      title: 'ถ่ายพยาธิและหยดยาป้องกันเห็บเหา',
-      date: '15 เม.ย. 2026',
-      clinic: 'คลินิกสัตว์เลี้ยงรักสัตว์',
-      details: 'หยดยา Frontline และรับยาทานถ่ายพยาธิ',
-      doctor: 'น.สพ. วิชัย สุขเกษม',
-    ),
-  ];
+    final newAccount = UserAccount(
+      email: normalizedEmail,
+      password: password.trim(),
+      fullName: fullName.trim(),
+      phone: phone.trim(),
+      pets: [],
+      feedings: [],
+      vaccines: [],
+      dogWalkings: [],
+      records: [],
+      notifications: [],
+    );
 
-  static List<NotificationItem> notificationList = [
-    NotificationItem(
-      id: '1',
-      title: 'ใกล้ถึงเวลาให้อาหารเย็น',
-      message: 'อย่าลืมให้อาหาร Doge เวลา 18:00 น.',
-      time: '17:30 น.',
-      isRead: false,
-    ),
-    NotificationItem(
-      id: '2',
-      title: 'เตือนเวลา Dog Walking',
-      message: 'ถึงเวลาพาสัตว์เลี้ยงออกไปเดินเล่น 17:00 น.',
-      time: 'เมื่อวานนี้',
-      isRead: true,
-    ),
-    NotificationItem(
-      id: '3',
-      title: 'เตือนนัดพบสัตวแพทย์',
-      message: 'นัดตรวจสุขภาพวันที่ 31 ส.ค. 2026',
-      time: '3 วันที่แล้ว',
-      isRead: true,
-    ),
-  ];
+    registeredAccounts.add(newAccount);
+    currentUserAccount = newAccount;
+    activePetIndex = 0;
+    return null; // Success
+  }
+
+  static String? loginUser({
+    required String email,
+    required String password,
+  }) {
+    final normalizedEmail = email.trim().toLowerCase();
+    final accountIndex = registeredAccounts.indexWhere(
+      (acc) => acc.email.trim().toLowerCase() == normalizedEmail,
+    );
+
+    if (accountIndex == -1) {
+      return 'ไม่พบบัญชีอีเมลนี้ในระบบ กรุณาสมัครสมาชิกก่อนเข้าสู่ระบบ';
+    }
+
+    final account = registeredAccounts[accountIndex];
+    if (account.password != password.trim()) {
+      return 'รหัสผ่านไม่ถูกต้อง กรุณาตรวจสอบรหัสผ่านอีกครั้ง';
+    }
+
+    currentUserAccount = account;
+    activePetIndex = 0;
+    return null; // Success
+  }
+
+  static String? resetPassword({
+    required String email,
+    required String newPassword,
+  }) {
+    final normalizedEmail = email.trim().toLowerCase();
+    final accountIndex = registeredAccounts.indexWhere(
+      (acc) => acc.email.trim().toLowerCase() == normalizedEmail,
+    );
+
+    if (accountIndex == -1) {
+      return 'ไม่พบบัญชีอีเมลนี้ในระบบ กรุณาตรวจสอบอีเมลอีกครั้ง';
+    }
+
+    registeredAccounts[accountIndex].password = newPassword.trim();
+    return null; // Success
+  }
+
+  static void loginWithSocial({
+    required String email,
+    required String fullName,
+  }) {
+    final normalizedEmail = email.trim().toLowerCase();
+    final accountIndex = registeredAccounts.indexWhere(
+      (acc) => acc.email.trim().toLowerCase() == normalizedEmail,
+    );
+
+    if (accountIndex != -1) {
+      currentUserAccount = registeredAccounts[accountIndex];
+    } else {
+      final newAccount = UserAccount(
+        email: normalizedEmail,
+        password: 'social_login_pwd',
+        fullName: fullName,
+        phone: '-',
+        pets: [],
+        feedings: [],
+        vaccines: [],
+        dogWalkings: [],
+        records: [],
+      );
+      registeredAccounts.add(newAccount);
+      currentUserAccount = newAccount;
+    }
+    activePetIndex = 0;
+  }
 }

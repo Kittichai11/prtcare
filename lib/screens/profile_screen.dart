@@ -1,4 +1,6 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import '../models/pet_data.dart';
 import 'login.dart';
 import 'add_pet_screen.dart';
@@ -12,6 +14,161 @@ class ProfileScreen extends StatefulWidget {
 
 class _ProfileScreenState extends State<ProfileScreen> {
   final OwnerProfile _profile = PetDataStore.currentProfile;
+  final ImagePicker _picker = ImagePicker();
+
+  // Map to control individual eye toggle visibility for owner and pet items
+  bool _isOwnerNameVisible = true;
+  bool _isOwnerEmailVisible = true;
+  bool _isOwnerPhoneVisible = true;
+  bool _isMasterOwnerVisible = true;
+
+  // Visibility map for pets (key = pet.id)
+  final Map<String, bool> _petVisibilityMap = {};
+
+  bool _isPetVisible(String petId) {
+    return _petVisibilityMap[petId] ?? true;
+  }
+
+  void _togglePetVisibility(String petId) {
+    setState(() {
+      _petVisibilityMap[petId] = !_isPetVisible(petId);
+    });
+  }
+
+  void _toggleMasterOwnerVisibility() {
+    setState(() {
+      _isMasterOwnerVisible = !_isMasterOwnerVisible;
+      _isOwnerNameVisible = _isMasterOwnerVisible;
+      _isOwnerEmailVisible = _isMasterOwnerVisible;
+      _isOwnerPhoneVisible = _isMasterOwnerVisible;
+    });
+  }
+
+  String _maskValue(String text, bool isVisible) {
+    if (isVisible) return text;
+    if (text.trim().isEmpty) return '••••';
+
+    // Email masking: e.g. ggez.petowner@gmail.com -> g••••@gmail.com
+    if (text.contains('@')) {
+      final parts = text.split('@');
+      final user = parts[0];
+      final domain = parts[1];
+      if (user.length > 2) {
+        return '${user.substring(0, 1)}••••@$domain';
+      }
+      return '••••@$domain';
+    }
+
+    // Phone masking: e.g. 081-234-5678 -> 081-***-****
+    if (RegExp(r'^[0-9\-\s]+$').hasMatch(text) && text.length >= 8) {
+      return '${text.substring(0, 3)}-***-****';
+    }
+
+    // Name masking: e.g. คุณ GGez -> คุณ G••••
+    if (text.startsWith('คุณ ') && text.length > 5) {
+      return 'คุณ ${text.substring(4, 5)}••••';
+    }
+
+    // Short text masking
+    if (text.length <= 4) {
+      return '••••';
+    }
+
+    return '${text.substring(0, 1)}••••••••';
+  }
+
+  Future<void> _pickOwnerImage(ImageSource source) async {
+    try {
+      final XFile? picked = await _picker.pickImage(
+        source: source,
+        maxWidth: 800,
+        maxHeight: 800,
+        imageQuality: 85,
+      );
+      if (picked != null) {
+        setState(() {
+          _profile.imagePath = picked.path;
+        });
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('อัปเดตรูปภาพโปรไฟล์เรียบร้อยแล้ว'),
+              backgroundColor: Color(0xFF673D17),
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('ไม่สามารถดึงรูปภาพได้: $e'),
+            backgroundColor: Colors.red[700],
+          ),
+        );
+      }
+    }
+  }
+
+  void _showImagePickerModal() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: const Color(0xFFF7EEDD),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (ctx) {
+        return Padding(
+          padding: const EdgeInsets.all(20.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                'เปลี่ยนรูปภาพโปรไฟล์เจ้าของ ID',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF5C3A21),
+                ),
+              ),
+              const SizedBox(height: 16),
+              ListTile(
+                leading: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: const BoxDecoration(
+                    color: Color(0xFFFFF0E5),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.photo_library_rounded, color: Color(0xFF673D17)),
+                ),
+                title: const Text('เลือกจากคลังรูปภาพ (Gallery)', style: TextStyle(fontWeight: FontWeight.bold)),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  _pickOwnerImage(ImageSource.gallery);
+                },
+              ),
+              ListTile(
+                leading: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: const BoxDecoration(
+                    color: Color(0xFFEBF5FF),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.camera_alt_rounded, color: Color(0xFF2B78C5)),
+                ),
+                title: const Text('ถ่ายภาพด้วยกล้อง (Camera)', style: TextStyle(fontWeight: FontWeight.bold)),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  _pickOwnerImage(ImageSource.camera);
+                },
+              ),
+              const SizedBox(height: 10),
+            ],
+          ),
+        );
+      },
+    );
+  }
 
   void _editProfile() {
     final nameController = TextEditingController(text: _profile.name);
@@ -174,32 +331,44 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   children: [
                     Stack(
                       children: [
-                        Container(
-                          width: 100,
-                          height: 100,
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF673D17),
-                            shape: BoxShape.circle,
-                            border: Border.all(color: Colors.white, width: 4),
-                            boxShadow: const [
-                              BoxShadow(
-                                color: Colors.black12,
-                                blurRadius: 10,
-                                offset: Offset(0, 4),
-                              ),
-                            ],
-                          ),
-                          child: const Icon(
-                            Icons.person_rounded,
-                            size: 64,
-                            color: Color(0xFFF7EEDD),
+                        GestureDetector(
+                          onTap: _showImagePickerModal,
+                          child: Container(
+                            width: 100,
+                            height: 100,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF673D17),
+                              shape: BoxShape.circle,
+                              border: Border.all(color: Colors.white, width: 4),
+                              boxShadow: const [
+                                BoxShadow(
+                                  color: Colors.black12,
+                                  blurRadius: 10,
+                                  offset: Offset(0, 4),
+                                ),
+                              ],
+                            ),
+                            child: _profile.imagePath != null
+                                ? ClipOval(
+                                    child: Image.file(
+                                      File(_profile.imagePath!),
+                                      width: 100,
+                                      height: 100,
+                                      fit: BoxFit.cover,
+                                    ),
+                                  )
+                                : const Icon(
+                                    Icons.person_rounded,
+                                    size: 64,
+                                    color: Color(0xFFF7EEDD),
+                                  ),
                           ),
                         ),
                         Positioned(
                           bottom: 0,
                           right: 0,
                           child: GestureDetector(
-                            onTap: _editProfile,
+                            onTap: _showImagePickerModal,
                             child: Container(
                               padding: const EdgeInsets.all(8),
                               decoration: const BoxDecoration(
@@ -218,7 +387,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                     const SizedBox(height: 14),
                     Text(
-                      'คุณ ${_profile.name}',
+                      _maskValue('คุณ ${_profile.name}', _isOwnerNameVisible),
                       style: const TextStyle(
                         fontSize: 22,
                         fontWeight: FontWeight.bold,
@@ -227,7 +396,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      _profile.email,
+                      _maskValue(_profile.email, _isOwnerEmailVisible),
                       style: const TextStyle(
                         fontSize: 14,
                         color: Color(0xFF8C735B),
@@ -238,14 +407,89 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
               const SizedBox(height: 24),
 
-              // Owner Info Card
-              _buildInfoSection(
-                title: 'ข้อมูลเจ้าของ ID',
-                items: [
-                  _InfoRow(icon: Icons.person_outline_rounded, label: 'ชื่อเจ้าของ', value: 'คุณ ${_profile.name}'),
-                  _InfoRow(icon: Icons.email_outlined, label: 'อีเมล', value: _profile.email),
-                  _InfoRow(icon: Icons.phone_android_outlined, label: 'เบอร์โทรศัพท์', value: _profile.phone),
-                ],
+              // Owner Info Card with Master & Individual Eye Toggle Buttons
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(24),
+                  boxShadow: const [
+                    BoxShadow(
+                      color: Colors.black12,
+                      blurRadius: 6,
+                      offset: Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          'ข้อมูลเจ้าของ ID',
+                          style: TextStyle(
+                            fontSize: 17,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF5C3A21),
+                          ),
+                        ),
+                        IconButton(
+                          icon: Icon(
+                            _isMasterOwnerVisible
+                                ? Icons.visibility_rounded
+                                : Icons.visibility_off_rounded,
+                            color: const Color(0xFF673D17),
+                          ),
+                          onPressed: _toggleMasterOwnerVisibility,
+                          tooltip: _isMasterOwnerVisible ? 'เซนเซอร์ข้อมูลทั้งหมด' : 'แสดงข้อมูลทั้งหมด',
+                        ),
+                      ],
+                    ),
+                    const Divider(color: Color(0xFFE8DCCB), height: 10),
+                    const SizedBox(height: 10),
+
+                    // Owner Name Row with Eye Button
+                    _buildToggleableInfoRow(
+                      icon: Icons.person_outline_rounded,
+                      label: 'ชื่อเจ้าของ',
+                      value: 'คุณ ${_profile.name}',
+                      isVisible: _isOwnerNameVisible,
+                      onToggle: () {
+                        setState(() {
+                          _isOwnerNameVisible = !_isOwnerNameVisible;
+                        });
+                      },
+                    ),
+
+                    // Email Row with Eye Button
+                    _buildToggleableInfoRow(
+                      icon: Icons.email_outlined,
+                      label: 'อีเมล',
+                      value: _profile.email,
+                      isVisible: _isOwnerEmailVisible,
+                      onToggle: () {
+                        setState(() {
+                          _isOwnerEmailVisible = !_isOwnerEmailVisible;
+                        });
+                      },
+                    ),
+
+                    // Phone Row with Eye Button
+                    _buildToggleableInfoRow(
+                      icon: Icons.phone_android_outlined,
+                      label: 'เบอร์โทรศัพท์',
+                      value: _profile.phone,
+                      isVisible: _isOwnerPhoneVisible,
+                      onToggle: () {
+                        setState(() {
+                          _isOwnerPhoneVisible = !_isOwnerPhoneVisible;
+                        });
+                      },
+                    ),
+                  ],
+                ),
               ),
               const SizedBox(height: 20),
 
@@ -286,8 +530,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
               const SizedBox(height: 12),
 
-              // Pet List Cards
+              // Pet List Cards with Individual Eye Buttons
               ...PetDataStore.petsList.map((pet) {
+                final isPetVisible = _isPetVisible(pet.id);
+
                 return Container(
                   margin: const EdgeInsets.only(bottom: 12),
                   padding: const EdgeInsets.all(16),
@@ -308,16 +554,27 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       Row(
                         children: [
                           Container(
-                            padding: const EdgeInsets.all(10),
+                            width: 60,
+                            height: 60,
                             decoration: BoxDecoration(
                               color: const Color(0xFFFFF0E5),
                               borderRadius: BorderRadius.circular(14),
                             ),
-                            child: const Icon(
-                              Icons.pets_rounded,
-                              color: Color(0xFF673D17),
-                              size: 28,
-                            ),
+                            child: pet.imagePath != null
+                                ? ClipRRect(
+                                    borderRadius: BorderRadius.circular(14),
+                                    child: Image.file(
+                                      File(pet.imagePath!),
+                                      width: 60,
+                                      height: 60,
+                                      fit: BoxFit.cover,
+                                    ),
+                                  )
+                                : const Icon(
+                                    Icons.pets_rounded,
+                                    color: Color(0xFF673D17),
+                                    size: 28,
+                                  ),
                           ),
                           const SizedBox(width: 14),
                           Expanded(
@@ -327,7 +584,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 Row(
                                   children: [
                                     Text(
-                                      pet.name,
+                                      _maskValue(pet.name, isPetVisible),
                                       style: const TextStyle(
                                         fontSize: 18,
                                         fontWeight: FontWeight.bold,
@@ -349,7 +606,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 ),
                                 const SizedBox(height: 2),
                                 Text(
-                                  'ประเภท: ${pet.category}  •  สายพันธุ์: ${pet.breed}',
+                                  'ประเภท: ${_maskValue(pet.category, isPetVisible)}  •  สายพันธุ์: ${_maskValue(pet.breed, isPetVisible)}',
                                   style: const TextStyle(
                                     fontSize: 13,
                                     color: Color(0xFF7A6551),
@@ -357,7 +614,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 ),
                                 const SizedBox(height: 2),
                                 Text(
-                                  'อายุ: ${pet.age}  •  น้ำหนัก: ${pet.weight}',
+                                  'อายุ: ${_maskValue(pet.age, isPetVisible)}  •  น้ำหนัก: ${_maskValue(pet.weight, isPetVisible)}',
                                   style: const TextStyle(
                                     fontSize: 13,
                                     color: Color(0xFF7A6551),
@@ -365,6 +622,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 ),
                               ],
                             ),
+                          ),
+
+                          // Eye Toggle Button for this specific Pet
+                          IconButton(
+                            icon: Icon(
+                              isPetVisible
+                                  ? Icons.visibility_rounded
+                                  : Icons.visibility_off_rounded,
+                              color: const Color(0xFF673D17),
+                            ),
+                            onPressed: () => _togglePetVisibility(pet.id),
+                            tooltip: isPetVisible ? 'เซนเซอร์ข้อมูลสัตว์เลี้ยง' : 'แสดงข้อมูลสัตว์เลี้ยง',
                           ),
                         ],
                       ),
@@ -379,7 +648,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             border: Border.all(color: const Color(0xFFE8DCCB)),
                           ),
                           child: Text(
-                            'ประวัติ: ${pet.history}',
+                            'ประวัติ: ${_maskValue(pet.history, isPetVisible)}',
                             style: const TextStyle(
                               fontSize: 13,
                               color: Color(0xFF4A3525),
@@ -446,69 +715,51 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _buildInfoSection({
-    required String title,
-    required List<_InfoRow> items,
+  Widget _buildToggleableInfoRow({
+    required IconData icon,
+    required String label,
+    required String value,
+    required bool isVisible,
+    required VoidCallback onToggle,
   }) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: const [
-          BoxShadow(
-            color: Colors.black12,
-            blurRadius: 6,
-            offset: Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12.0),
+      child: Row(
         children: [
+          Icon(icon, color: const Color(0xFF8C735B), size: 22),
+          const SizedBox(width: 10),
           Text(
-            title,
-            style: const TextStyle(
-              fontSize: 17,
-              fontWeight: FontWeight.bold,
-              color: Color(0xFF5C3A21),
+            '$label: ',
+            style: const TextStyle(fontSize: 14, color: Color(0xFF7A6551)),
+          ),
+          Expanded(
+            child: Text(
+              _maskValue(value, isVisible),
+              textAlign: TextAlign.end,
+              style: const TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF333333),
+              ),
             ),
           ),
-          const Divider(color: Color(0xFFE8DCCB), height: 20),
-          ...items.map((row) => Padding(
-                padding: const EdgeInsets.only(bottom: 12.0),
-                child: Row(
-                  children: [
-                    Icon(row.icon, color: const Color(0xFF8C735B), size: 22),
-                    const SizedBox(width: 12),
-                    Text(
-                      '${row.label}: ',
-                      style: const TextStyle(fontSize: 14, color: Color(0xFF7A6551)),
-                    ),
-                    Expanded(
-                      child: Text(
-                        row.value,
-                        textAlign: TextAlign.end,
-                        style: const TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF333333),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              )),
+          const SizedBox(width: 6),
+          InkWell(
+            onTap: onToggle,
+            borderRadius: BorderRadius.circular(20),
+            child: Padding(
+              padding: const EdgeInsets.all(4.0),
+              child: Icon(
+                isVisible
+                    ? Icons.visibility_rounded
+                    : Icons.visibility_off_rounded,
+                color: isVisible ? const Color(0xFF673D17) : const Color(0xFFA09385),
+                size: 20,
+              ),
+            ),
+          ),
         ],
       ),
     );
   }
-}
-
-class _InfoRow {
-  final IconData icon;
-  final String label;
-  final String value;
-
-  _InfoRow({required this.icon, required this.label, required this.value});
 }

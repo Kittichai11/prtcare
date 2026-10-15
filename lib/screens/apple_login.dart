@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../models/pet_data.dart';
+import 'home_screen.dart';
 
 class AppleLoginScreen extends StatefulWidget {
   const AppleLoginScreen({super.key});
@@ -135,13 +137,26 @@ class _AppleLoginScreenState extends State<AppleLoginScreen> {
                   child: ElevatedButton(
                     onPressed: () {
                       if (_formKey.currentState!.validate()) {
+                        final email = _appleIdController.text.trim();
+                        final name = email.split('@').first;
+
+                        PetDataStore.loginWithSocial(
+                          email: email,
+                          fullName: name,
+                        );
+
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
-                            content: Text('กำลังเข้าสู่ระบบด้วย Apple ID ${_appleIdController.text}'),
+                            content: Text('เข้าสู่ระบบด้วย Apple ID ($email) เรียบร้อยแล้ว'),
                             backgroundColor: Colors.black,
                           ),
                         );
-                        Navigator.of(context).pop();
+
+                        Navigator.pushAndRemoveUntil(
+                          context,
+                          MaterialPageRoute(builder: (context) => const HomeScreen()),
+                          (route) => false,
+                        );
                       }
                     },
                     style: ElevatedButton.styleFrom(

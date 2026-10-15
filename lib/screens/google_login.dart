@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import '../models/pet_data.dart';
 import 'login.dart';
+import 'home_screen.dart';
 
 class GoogleLoginScreen extends StatefulWidget {
   const GoogleLoginScreen({super.key});
@@ -139,13 +141,26 @@ class _GoogleLoginScreenState extends State<GoogleLoginScreen> {
                   child: ElevatedButton(
                     onPressed: () {
                       if (_formKey.currentState!.validate()) {
+                        final email = _emailController.text.trim();
+                        final name = email.split('@').first;
+
+                        PetDataStore.loginWithSocial(
+                          email: email,
+                          fullName: name,
+                        );
+
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
-                            content: Text('กำลังเข้าสู่ระบบด้วย ${_emailController.text}'),
+                            content: Text('เข้าสู่ระบบด้วย Google ($email) เรียบร้อยแล้ว'),
                             backgroundColor: const Color(0xFF4285F4),
                           ),
                         );
-                        Navigator.of(context).pop();
+
+                        Navigator.pushAndRemoveUntil(
+                          context,
+                          MaterialPageRoute(builder: (context) => const HomeScreen()),
+                          (route) => false,
+                        );
                       }
                     },
                     style: ElevatedButton.styleFrom(

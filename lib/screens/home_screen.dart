@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import '../models/pet_data.dart';
 import 'feeding_screen.dart';
@@ -51,7 +52,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 icon: Icons.pets_rounded,
                 iconColor: const Color(0xFF673D17),
                 title: 'เพิ่มสัตว์เลี้ยงใหม่',
-                subtitle: 'กรอกชื่อ ประเภท รูปภาพ สายพันธุ์ เพศ น้ำหนัก และประวัติ',
+                subtitle: 'กรอกชื่อ รูปภาพ สายพันธุ์ เพศ น้ำหนัก และประวัติ',
                 onTap: () async {
                   Navigator.pop(ctx);
                   final res = await Navigator.push(
@@ -70,12 +71,13 @@ class _HomeScreenState extends State<HomeScreen> {
                 iconColor: const Color(0xFFD86A38),
                 title: 'เพิ่มเวลาให้อาหาร',
                 subtitle: 'ตั้งเวลาแจ้งเตือนมื้ออาหารของสัตว์เลี้ยง',
-                onTap: () {
+                onTap: () async {
                   Navigator.pop(ctx);
-                  Navigator.push(
+                  await Navigator.push(
                     context,
                     MaterialPageRoute(builder: (context) => const FeedingScreen()),
                   );
+                  _refreshState();
                 },
               ),
               const SizedBox(height: 10),
@@ -83,14 +85,15 @@ class _HomeScreenState extends State<HomeScreen> {
               _buildAddOptionTile(
                 icon: Icons.directions_run_rounded,
                 iconColor: const Color(0xFF2B78C5),
-                title: 'ตั้งวันและเวลา Dog Walking',
+                title: 'ตั้งวันและเวลา PETS Walking',
                 subtitle: 'พาสัตว์เลี้ยงออกไปเดินเล่นและออกกำลังกาย',
-                onTap: () {
+                onTap: () async {
                   Navigator.pop(ctx);
-                  Navigator.push(
+                  await Navigator.push(
                     context,
                     MaterialPageRoute(builder: (context) => const DogWalkingScreen()),
                   );
+                  _refreshState();
                 },
               ),
               const SizedBox(height: 10),
@@ -100,12 +103,13 @@ class _HomeScreenState extends State<HomeScreen> {
                 iconColor: const Color(0xFFD84A38),
                 title: 'เพิ่มวันนัดสัตวแพทย์ / วัคซีน',
                 subtitle: 'ตั้งค่าวันนัดหมายและเวลาแจ้งเตือน',
-                onTap: () {
+                onTap: () async {
                   Navigator.pop(ctx);
-                  Navigator.push(
+                  await Navigator.push(
                     context,
                     MaterialPageRoute(builder: (context) => const VaccineScreen()),
                   );
+                  _refreshState();
                 },
               ),
               const SizedBox(height: 10),
@@ -115,12 +119,13 @@ class _HomeScreenState extends State<HomeScreen> {
                 iconColor: const Color(0xFF5C3A21),
                 title: 'เพิ่มสมุดบันทึกการรักษา',
                 subtitle: 'บันทึกประวัติสุขภาพและการรักษาพยาบาล',
-                onTap: () {
+                onTap: () async {
                   Navigator.pop(ctx);
-                  Navigator.push(
+                  await Navigator.push(
                     context,
                     MaterialPageRoute(builder: (context) => const RecordsScreen()),
                   );
+                  _refreshState();
                 },
               ),
               const SizedBox(height: 12),
@@ -330,7 +335,7 @@ class _HomeDashboardTabState extends State<_HomeDashboardTab> {
   @override
   Widget build(BuildContext context) {
     final profile = PetDataStore.currentProfile;
-    final pet = PetDataStore.activePet;
+    final petList = PetDataStore.petsList;
 
     return SafeArea(
       child: SingleChildScrollView(
@@ -338,7 +343,7 @@ class _HomeDashboardTabState extends State<_HomeDashboardTab> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Header Bar: "สวัสดีคุณ GGez" + Avatar
+            // Header Bar: "สวัสดีคุณ ..." + Avatar
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -351,11 +356,12 @@ class _HomeDashboardTabState extends State<_HomeDashboardTab> {
                   ),
                 ),
                 GestureDetector(
-                  onTap: () {
-                    Navigator.push(
+                  onTap: () async {
+                    await Navigator.push(
                       context,
                       MaterialPageRoute(builder: (context) => const ProfileScreen()),
                     );
+                    setState(() {});
                   },
                   child: Container(
                     width: 48,
@@ -371,188 +377,297 @@ class _HomeDashboardTabState extends State<_HomeDashboardTab> {
                         ),
                       ],
                     ),
-                    child: const Icon(
-                      Icons.person_rounded,
-                      color: Color(0xFFF7EEDD),
-                      size: 32,
-                    ),
+                    child: profile.imagePath != null
+                        ? ClipOval(
+                            child: Image.file(
+                              File(profile.imagePath!),
+                              width: 48,
+                              height: 48,
+                              fit: BoxFit.cover,
+                            ),
+                          )
+                        : const Icon(
+                            Icons.person_rounded,
+                            color: Color(0xFFF7EEDD),
+                            size: 32,
+                          ),
                   ),
                 ),
               ],
             ),
             const SizedBox(height: 20),
 
-            // Pet Selector Bar
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                DropdownButton<int>(
-                  value: PetDataStore.activePetIndex,
-                  underline: const SizedBox(),
-                  icon: const Icon(Icons.keyboard_arrow_down_rounded, color: Color(0xFF5C3A21)),
-                  items: List.generate(
-                    PetDataStore.petsList.length,
-                    (idx) => DropdownMenuItem(
-                      value: idx,
-                      child: Text(
-                        'สัตว์เลี้ยง: ${PetDataStore.petsList[idx].name}',
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF5C3A21),
-                        ),
-                      ),
-                    ),
-                  ),
-                  onChanged: (val) {
-                    if (val != null) {
-                      setState(() {
-                        PetDataStore.activePetIndex = val;
-                      });
-                      widget.onPetChanged();
-                    }
-                  },
-                ),
-                ElevatedButton.icon(
-                  onPressed: () async {
-                    final res = await Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => const AddPetScreen()),
-                    );
-                    if (res == true) {
-                      setState(() {});
-                      widget.onPetChanged();
-                    }
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF673D17),
-                    foregroundColor: Colors.white,
-                    elevation: 1,
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                  ),
-                  icon: const Icon(Icons.add, size: 18),
-                  label: const Text('เพิ่มสัตว์เลี้ยง', style: TextStyle(fontSize: 13)),
-                ),
-              ],
-            ),
-            const SizedBox(height: 10),
+            // Pet Selector Bar or Add First Pet
+            if (petList.isNotEmpty) ...[
+              Builder(
+                builder: (context) {
+                  final activePet = PetDataStore.activePet!;
 
-            // Main Pet Info Card
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: const Color(0xFFD8B896),
-                borderRadius: BorderRadius.circular(28),
-                boxShadow: const [
-                  BoxShadow(
-                    color: Colors.black12,
-                    blurRadius: 8,
-                    offset: Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
+                  return Column(
                     children: [
-                      // Pet Picture Box
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          DropdownButton<int>(
+                            value: PetDataStore.activePetIndex,
+                            underline: const SizedBox(),
+                            icon: const Icon(Icons.keyboard_arrow_down_rounded, color: Color(0xFF5C3A21)),
+                            items: List.generate(
+                              petList.length,
+                              (idx) => DropdownMenuItem(
+                                value: idx,
+                                child: Text(
+                                  'สัตว์เลี้ยง: ${petList[idx].name}',
+                                  style: const TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                    color: Color(0xFF5C3A21),
+                                  ),
+                                ),
+                              ),
+                            ),
+                            onChanged: (val) {
+                              if (val != null) {
+                                setState(() {
+                                  PetDataStore.activePetIndex = val;
+                                });
+                                widget.onPetChanged();
+                              }
+                            },
+                          ),
+                          ElevatedButton.icon(
+                            onPressed: () async {
+                              final res = await Navigator.push(
+                                context,
+                                MaterialPageRoute(builder: (context) => const AddPetScreen()),
+                              );
+                              if (res == true) {
+                                setState(() {});
+                                widget.onPetChanged();
+                              }
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF673D17),
+                              foregroundColor: Colors.white,
+                              elevation: 1,
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                            ),
+                            icon: const Icon(Icons.add, size: 18),
+                            label: const Text('เพิ่มสัตว์เลี้ยง', style: TextStyle(fontSize: 13)),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 10),
+
+                      // Main Pet Info Card
                       Container(
-                        width: 90,
-                        height: 90,
+                        padding: const EdgeInsets.all(20),
                         decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(16),
+                          color: const Color(0xFFD8B896),
+                          borderRadius: BorderRadius.circular(28),
                           boxShadow: const [
                             BoxShadow(
                               color: Colors.black12,
-                              blurRadius: 4,
-                              offset: Offset(0, 2),
+                              blurRadius: 8,
+                              offset: Offset(0, 4),
                             ),
                           ],
                         ),
-                        child: const ClipRRect(
-                          borderRadius: BorderRadius.all(Radius.circular(16)),
-                          child: ShibaAvatarWidget(),
-                        ),
-                      ),
-                      const SizedBox(width: 18),
-
-                      // Pet Details Text
-                      Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Row(
                               children: [
-                                Text(
-                                  pet.name,
-                                  style: const TextStyle(
-                                    fontSize: 24,
-                                    fontWeight: FontWeight.bold,
-                                    color: Color(0xFF333333),
+                                // Pet Picture Box
+                                Container(
+                                  width: 90,
+                                  height: 90,
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    borderRadius: BorderRadius.circular(16),
+                                    boxShadow: const [
+                                      BoxShadow(
+                                        color: Colors.black12,
+                                        blurRadius: 4,
+                                        offset: Offset(0, 2),
+                                      ),
+                                    ],
+                                  ),
+                                  child: ClipRRect(
+                                    borderRadius: const BorderRadius.all(Radius.circular(16)),
+                                    child: activePet.imagePath != null
+                                        ? Image.file(
+                                            File(activePet.imagePath!),
+                                            width: 90,
+                                            height: 90,
+                                            fit: BoxFit.cover,
+                                          )
+                                        : const ShibaAvatarWidget(),
                                   ),
                                 ),
-                                const SizedBox(width: 6),
-                                Text(
-                                  pet.gender,
-                                  style: TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.bold,
-                                    color: pet.gender.contains('ผู้')
-                                        ? const Color(0xFF2B78C5)
-                                        : const Color(0xFFE84A5F),
+                                const SizedBox(width: 18),
+
+                                // Pet Details Text
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Row(
+                                        children: [
+                                          Text(
+                                            activePet.name,
+                                            style: const TextStyle(
+                                              fontSize: 24,
+                                              fontWeight: FontWeight.bold,
+                                              color: Color(0xFF333333),
+                                            ),
+                                          ),
+                                          const SizedBox(width: 6),
+                                          Text(
+                                            activePet.gender,
+                                            style: TextStyle(
+                                              fontSize: 18,
+                                              fontWeight: FontWeight.bold,
+                                              color: activePet.gender.contains('ผู้')
+                                                  ? const Color(0xFF2B78C5)
+                                                  : const Color(0xFFE84A5F),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        '${activePet.category} • ${activePet.breed}',
+                                        style: const TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.w500,
+                                          color: Color(0xFF4A3525),
+                                        ),
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        'อายุ ${activePet.age}  •  น้ำหนัก ${activePet.weight}',
+                                        style: const TextStyle(
+                                          fontSize: 14,
+                                          color: Color(0xFF5C4332),
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 ),
                               ],
                             ),
-                            const SizedBox(height: 4),
-                            Text(
-                              '${pet.category} • ${pet.breed}',
-                              style: const TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w500,
-                                color: Color(0xFF4A3525),
+                            if (activePet.history.isNotEmpty) ...[
+                              const SizedBox(height: 14),
+                              Container(
+                                width: double.infinity,
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withOpacity(0.85),
+                                  borderRadius: BorderRadius.circular(14),
+                                ),
+                                child: Text(
+                                  'ประวัติสัตว์เลี้ยง: ${activePet.history}',
+                                  style: const TextStyle(
+                                    fontSize: 13,
+                                    color: Color(0xFF4A3525),
+                                  ),
+                                ),
                               ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              'อายุ ${pet.age}  •  น้ำหนัก ${pet.weight}',
-                              style: const TextStyle(
-                                fontSize: 14,
-                                color: Color(0xFF5C4332),
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
+                            ],
                           ],
                         ),
                       ),
                     ],
-                  ),
-                  if (pet.history.isNotEmpty) ...[
-                    const SizedBox(height: 14),
+                  );
+                },
+              ),
+            ] else ...[
+              // Empty Pet State for Fresh New Users
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 28),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFD8B896),
+                  borderRadius: BorderRadius.circular(28),
+                  boxShadow: const [
+                    BoxShadow(
+                      color: Colors.black12,
+                      blurRadius: 8,
+                      offset: Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  children: [
                     Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.85),
-                        borderRadius: BorderRadius.circular(14),
+                      padding: const EdgeInsets.all(16),
+                      decoration: const BoxDecoration(
+                        color: Colors.white,
+                        shape: BoxShape.circle,
                       ),
-                      child: Text(
-                        'ประวัติสัตว์เลี้ยง: ${pet.history}',
-                        style: const TextStyle(
-                          fontSize: 13,
-                          color: Color(0xFF4A3525),
+                      child: const Icon(
+                        Icons.pets_rounded,
+                        size: 48,
+                        color: Color(0xFF673D17),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    const Text(
+                      'ยินดีต้อนรับ! ยังไม่มีสัตว์เลี้ยงของคุณ',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF333333),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    const Text(
+                      'เริ่มต้นกรอกข้อมูลสัตว์เลี้ยงตัวแรกของคุณ เพื่อตั้งเวลาให้อาหาร นัดหมอ และติดตามสุขภาพ',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Color(0xFF4A3525),
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    SizedBox(
+                      height: 48,
+                      child: ElevatedButton.icon(
+                        onPressed: () async {
+                          final res = await Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (context) => const AddPetScreen()),
+                          );
+                          if (res == true) {
+                            setState(() {});
+                            widget.onPetChanged();
+                          }
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF673D17),
+                          foregroundColor: Colors.white,
+                          elevation: 2,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(24),
+                          ),
+                        ),
+                        icon: const Icon(Icons.add, size: 22),
+                        label: const Text(
+                          'เพิ่มสัตว์เลี้ยงของคุณ',
+                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                         ),
                       ),
                     ),
                   ],
-                ],
+                ),
               ),
-            ),
+            ],
             const SizedBox(height: 28),
 
             // Today's Reminders Header
@@ -566,7 +681,7 @@ class _HomeDashboardTabState extends State<_HomeDashboardTab> {
             ),
             const SizedBox(height: 16),
 
-            // Card 1: เวลาการให้อาหาร (Feeding Times Card)
+            // Card 1: เวลาการให้อาหาร (Dynamic: Only show time if set!)
             _buildReminderCard(
               context: context,
               iconWidget: Container(
@@ -581,19 +696,26 @@ class _HomeDashboardTabState extends State<_HomeDashboardTab> {
                   size: 28,
                 ),
               ),
-              title: 'เวลาการให้อาหาร',
-              timeText: '18:00 น.',
-              badgeText: 'ใกล้ถึงเวลา',
-              onTap: () {
-                Navigator.push(
+              title: PetDataStore.feedingList.isNotEmpty
+                  ? PetDataStore.feedingList.first.title
+                  : 'เวลาการให้อาหาร',
+              timeText: PetDataStore.feedingList.isNotEmpty
+                  ? PetDataStore.feedingList.first.time
+                  : 'ยังไม่ได้ตั้งเวลาให้อาหาร (กดเพื่อกำหนดเวลา)',
+              badgeText: (PetDataStore.feedingList.isNotEmpty && PetDataStore.feedingList.first.isNearTime)
+                  ? 'ใกล้ถึงเวลา'
+                  : null,
+              onTap: () async {
+                await Navigator.push(
                   context,
                   MaterialPageRoute(builder: (context) => const FeedingScreen()),
                 );
+                setState(() {});
               },
             ),
             const SizedBox(height: 14),
 
-            // Card 2: นัดพบสัตวแพทย์ (Vet Appointment Card)
+            // Card 2: นัดพบสัตวแพทย์ (Dynamic: Only show date if set!)
             _buildReminderCard(
               context: context,
               iconWidget: Container(
@@ -608,19 +730,24 @@ class _HomeDashboardTabState extends State<_HomeDashboardTab> {
                   size: 28,
                 ),
               ),
-              title: 'นัดพบสัตวแพทย์',
-              timeText: 'อีก 25 วัน      31 ส.ค. 2026',
+              title: PetDataStore.vaccineList.isNotEmpty
+                  ? PetDataStore.vaccineList.first.title
+                  : 'นัดพบสัตวแพทย์',
+              timeText: PetDataStore.vaccineList.isNotEmpty
+                  ? 'อีก ${PetDataStore.vaccineList.first.daysLeft} วัน      ${PetDataStore.vaccineList.first.date}'
+                  : 'ยังไม่ได้ตั้งวันนัดหมาย (กดเพื่อกำหนดวัน)',
               badgeText: null,
-              onTap: () {
-                Navigator.push(
+              onTap: () async {
+                await Navigator.push(
                   context,
                   MaterialPageRoute(builder: (context) => const VaccineScreen()),
                 );
+                setState(() {});
               },
             ),
             const SizedBox(height: 14),
 
-            // Card 3: Dog Walking (Running/Walking Icon Card)
+            // Card 3: PETS Walking (Dynamic: Only show time if set!)
             _buildReminderCard(
               context: context,
               iconWidget: Container(
@@ -635,14 +762,17 @@ class _HomeDashboardTabState extends State<_HomeDashboardTab> {
                   size: 28,
                 ),
               ),
-              title: 'Dog Walking',
-              timeText: '17:00 น.        ทุกวันเย็น',
+              title: 'PETS Walking',
+              timeText: PetDataStore.dogWalkingList.isNotEmpty
+                  ? 'เวลา ${PetDataStore.dogWalkingList.first.time}        ${PetDataStore.dogWalkingList.first.daysOrDate}'
+                  : 'ยังไม่ได้ตั้งเวลาเดินเล่น (กดเพื่อกำหนดเวลา)',
               badgeText: null,
-              onTap: () {
-                Navigator.push(
+              onTap: () async {
+                await Navigator.push(
                   context,
                   MaterialPageRoute(builder: (context) => const DogWalkingScreen()),
                 );
+                setState(() {});
               },
             ),
             const SizedBox(height: 20),
@@ -815,130 +945,6 @@ class _ShibaPainter extends CustomPainter {
     // Eyebrows (Cream dots)
     canvas.drawCircle(Offset(w * 0.34, h * 0.36), w * 0.045, cream);
     canvas.drawCircle(Offset(w * 0.66, h * 0.36), w * 0.045, cream);
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
-}
-
-// Food Bowl Icon
-class BowlIconWidget extends StatelessWidget {
-  const BowlIconWidget({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return CustomPaint(painter: _BowlPainter());
-  }
-}
-
-class _BowlPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final w = size.width;
-    final h = size.height;
-
-    final bowlColor = Paint()..color = const Color(0xFFE85D36);
-    final foodColor = Paint()..color = const Color(0xFF7A4B23);
-    final shadowColor = Paint()..color = const Color(0xFFC44824);
-
-    // Food mound
-    canvas.drawOval(
-      Rect.fromCenter(center: Offset(w * 0.5, h * 0.40), width: w * 0.72, height: h * 0.36),
-      foodColor,
-    );
-
-    // Kibbles details
-    final kibble = Paint()..color = const Color(0xFF9A6233);
-    canvas.drawCircle(Offset(w * 0.38, h * 0.32), 3, kibble);
-    canvas.drawCircle(Offset(w * 0.52, h * 0.28), 3.5, kibble);
-    canvas.drawCircle(Offset(w * 0.62, h * 0.36), 3, kibble);
-
-    // Bowl Body
-    final bowlPath = Path()
-      ..moveTo(w * 0.10, h * 0.42)
-      ..lineTo(w * 0.18, h * 0.80)
-      ..quadraticBezierTo(w * 0.5, h * 0.95, w * 0.82, h * 0.80)
-      ..lineTo(w * 0.90, h * 0.42)
-      ..close();
-    canvas.drawPath(bowlPath, bowlColor);
-
-    // Bowl Rim
-    canvas.drawOval(
-      Rect.fromCenter(center: Offset(w * 0.5, h * 0.42), width: w * 0.82, height: h * 0.18),
-      shadowColor,
-    );
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
-}
-
-// Calendar Icon
-class CalendarIconWidget extends StatelessWidget {
-  const CalendarIconWidget({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return CustomPaint(painter: _CalendarPainter());
-  }
-}
-
-class _CalendarPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final w = size.width;
-    final h = size.height;
-
-    final body = Paint()..color = const Color(0xFF5C3A21);
-    final grid = Paint()..color = const Color(0xFF8C6239);
-
-    // Main Box
-    canvas.drawRRect(
-      RRect.fromRectAndRadius(
-        Rect.fromLTWH(w * 0.15, h * 0.18, w * 0.70, h * 0.68),
-        const Radius.circular(8),
-      ),
-      Paint()..color = Colors.white..style = PaintingStyle.fill,
-    );
-
-    canvas.drawRRect(
-      RRect.fromRectAndRadius(
-        Rect.fromLTWH(w * 0.15, h * 0.18, w * 0.70, h * 0.68),
-        const Radius.circular(8),
-      ),
-      body..style = PaintingStyle.stroke..strokeWidth = 2.5,
-    );
-
-    // Top Header
-    final headerPath = Path()
-      ..addRRect(RRect.fromRectAndCorners(
-        Rect.fromLTWH(w * 0.15, h * 0.18, w * 0.70, h * 0.18),
-        topLeft: const Radius.circular(8),
-        topRight: const Radius.circular(8),
-      ));
-    canvas.drawPath(headerPath, Paint()..color = const Color(0xFF8C6239));
-
-    // Rings
-    canvas.drawRect(Rect.fromLTWH(w * 0.32, h * 0.10, 3, 8), body);
-    canvas.drawRect(Rect.fromLTWH(w * 0.68, h * 0.10, 3, 8), body);
-
-    // Grid dots
-    for (int r = 0; r < 2; r++) {
-      for (int c = 0; c < 3; c++) {
-        canvas.drawRRect(
-          RRect.fromRectAndRadius(
-            Rect.fromLTWH(
-              w * 0.28 + (c * w * 0.18),
-              h * 0.44 + (r * h * 0.16),
-              w * 0.10,
-              h * 0.09,
-            ),
-            const Radius.circular(2),
-          ),
-          grid,
-        );
-      }
-    }
   }
 
   @override

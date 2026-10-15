@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import '../models/pet_data.dart';
 import 'register.dart';
+import 'forgot_password_screen.dart';
 import 'google_login.dart';
 import 'apple_login.dart';
 import 'home_screen.dart';
@@ -51,7 +53,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 const SizedBox(height: 16),
 
-                // Cute Pet Illustration Graphic (Dog & Cat)
+                // Cute Pet Illustration Graphic
                 const Center(
                   child: PetIllustrationWidget(),
                 ),
@@ -89,18 +91,40 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 const SizedBox(height: 24),
 
-                // Primary Login Button "เข้าสู่ระบบ" -> Navigate to HomeScreen
+                // Primary Login Button "เข้าสู่ระบบ"
                 SizedBox(
                   height: 52,
                   child: ElevatedButton(
                     onPressed: () {
                       if (_formKey.currentState!.validate()) {
-                        Navigator.pushReplacement(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const HomeScreen(),
-                          ),
+                        final errorMsg = PetDataStore.loginUser(
+                          email: _emailController.text,
+                          password: _passwordController.text,
                         );
+
+                        if (errorMsg != null) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(errorMsg),
+                              backgroundColor: Colors.red[700],
+                            ),
+                          );
+                        } else {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                'ยินดีต้อนรับคุณ ${PetDataStore.currentUser.fullName}!',
+                              ),
+                              backgroundColor: const Color(0xFF673D17),
+                            ),
+                          );
+                          Navigator.pushReplacement(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const HomeScreen(),
+                            ),
+                          );
+                        }
                       }
                     },
                     style: ElevatedButton.styleFrom(
@@ -123,28 +147,59 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 const SizedBox(height: 16),
 
-                // Register Link "สมัครสมาชิก" -> Navigate to RegisterScreen
-                Center(
-                  child: TextButton(
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const RegisterScreen(),
+                // Register and Forgot Password Links Row
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    TextButton(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const RegisterScreen(),
+                          ),
+                        );
+                      },
+                      child: const Text(
+                        'สมัครสมาชิก',
+                        style: TextStyle(
+                          fontSize: 15,
+                          color: Color(0xFF673D17),
+                          fontWeight: FontWeight.bold,
+                          decoration: TextDecoration.underline,
+                          decorationColor: Color(0xFF673D17),
                         ),
-                      );
-                    },
-                    child: const Text(
-                      'สมัครสมาชิก',
-                      style: TextStyle(
-                        fontSize: 16,
-                        color: Color(0xFF673D17),
-                        fontWeight: FontWeight.bold,
-                        decoration: TextDecoration.underline,
-                        decorationColor: Color(0xFF673D17),
                       ),
                     ),
-                  ),
+                    const Text(
+                      '  |  ',
+                      style: TextStyle(
+                        fontSize: 15,
+                        color: Color(0xFF8C735B),
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    TextButton(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const ForgotPasswordScreen(),
+                          ),
+                        );
+                      },
+                      child: const Text(
+                        'ลืมรหัสผ่าน?',
+                        style: TextStyle(
+                          fontSize: 15,
+                          color: Color(0xFF673D17),
+                          fontWeight: FontWeight.bold,
+                          decoration: TextDecoration.underline,
+                          decorationColor: Color(0xFF673D17),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 12),
 
@@ -178,7 +233,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 const SizedBox(height: 20),
 
-                // Social Login Button 1: Google -> Navigate to GoogleLoginScreen
+                // Social Login Button 1: Google
                 _buildSocialButton(
                   iconWidget: const GoogleLogoWidget(),
                   label: 'เข้าสู่ระบบด้วย Google',
@@ -193,7 +248,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 const SizedBox(height: 14),
 
-                // Social Login Button 2: Apple -> Navigate to AppleLoginScreen
+                // Social Login Button 2: Apple
                 _buildSocialButton(
                   iconWidget: const Icon(
                     Icons.apple,
@@ -353,7 +408,7 @@ class PetIllustrationPainter extends CustomPainter {
       ..color = const Color(0xFFE8A598)
       ..style = PaintingStyle.fill;
 
-    // --- Paw Print at Top ---
+    // Paw Print
     final pawCenter = Offset(size.width * 0.5, size.height * 0.16);
     canvas.drawOval(
       Rect.fromCenter(center: Offset(pawCenter.dx, pawCenter.dy + 3), width: 16, height: 12),
@@ -364,7 +419,7 @@ class PetIllustrationPainter extends CustomPainter {
     canvas.drawCircle(Offset(pawCenter.dx + 3, pawCenter.dy - 7), 3, darkBrown);
     canvas.drawCircle(Offset(pawCenter.dx + 8, pawCenter.dy - 4), 3, darkBrown);
 
-    // --- Dog (Left) ---
+    // Dog
     final dogCenter = Offset(size.width * 0.35, size.height * 0.62);
     canvas.drawCircle(dogCenter, 34, mediumBrown);
 
@@ -399,7 +454,7 @@ class PetIllustrationPainter extends CustomPainter {
       ..addOval(Rect.fromLTWH(dogCenter.dx + 24, dogCenter.dy - 28, 18, 34));
     canvas.drawPath(rightEarPath, darkBrown);
 
-    // --- Cat (Right) ---
+    // Cat
     final catCenter = Offset(size.width * 0.68, size.height * 0.65);
     canvas.drawCircle(catCenter, 28, lightBrown);
 
