@@ -1,4 +1,6 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import '../models/pet_data.dart';
 import 'login.dart';
 import 'add_pet_screen.dart';
@@ -12,6 +14,100 @@ class ProfileScreen extends StatefulWidget {
 
 class _ProfileScreenState extends State<ProfileScreen> {
   final OwnerProfile _profile = PetDataStore.currentProfile;
+  final ImagePicker _picker = ImagePicker();
+
+  Future<void> _pickOwnerImage(ImageSource source) async {
+    try {
+      final XFile? picked = await _picker.pickImage(
+        source: source,
+        maxWidth: 800,
+        maxHeight: 800,
+        imageQuality: 85,
+      );
+      if (picked != null) {
+        setState(() {
+          _profile.imagePath = picked.path;
+        });
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('อัปเดตรูปภาพโปรไฟล์เรียบร้อยแล้ว'),
+              backgroundColor: Color(0xFF673D17),
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('ไม่สามารถดึงรูปภาพได้: $e'),
+            backgroundColor: Colors.red[700],
+          ),
+        );
+      }
+    }
+  }
+
+  void _showImagePickerModal() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: const Color(0xFFF7EEDD),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (ctx) {
+        return Padding(
+          padding: const EdgeInsets.all(20.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                'เปลี่ยนรูปภาพโปรไฟล์เจ้าของ ID',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF5C3A21),
+                ),
+              ),
+              const SizedBox(height: 16),
+              ListTile(
+                leading: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: const BoxDecoration(
+                    color: Color(0xFFFFF0E5),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.photo_library_rounded, color: Color(0xFF673D17)),
+                ),
+                title: const Text('เลือกจากคลังรูปภาพ (Gallery)', style: TextStyle(fontWeight: FontWeight.bold)),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  _pickOwnerImage(ImageSource.gallery);
+                },
+              ),
+              ListTile(
+                leading: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: const BoxDecoration(
+                    color: Color(0xFFEBF5FF),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.camera_alt_rounded, color: Color(0xFF2B78C5)),
+                ),
+                title: const Text('ถ่ายภาพด้วยกล้อง (Camera)', style: TextStyle(fontWeight: FontWeight.bold)),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  _pickOwnerImage(ImageSource.camera);
+                },
+              ),
+              const SizedBox(height: 10),
+            ],
+          ),
+        );
+      },
+    );
+  }
 
   void _editProfile() {
     final nameController = TextEditingController(text: _profile.name);
@@ -168,38 +264,50 @@ class _ProfileScreenState extends State<ProfileScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // User Avatar Card
+              // User Avatar Card (Real Profile Photo Picker)
               Center(
                 child: Column(
                   children: [
                     Stack(
                       children: [
-                        Container(
-                          width: 100,
-                          height: 100,
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF673D17),
-                            shape: BoxShape.circle,
-                            border: Border.all(color: Colors.white, width: 4),
-                            boxShadow: const [
-                              BoxShadow(
-                                color: Colors.black12,
-                                blurRadius: 10,
-                                offset: Offset(0, 4),
-                              ),
-                            ],
-                          ),
-                          child: const Icon(
-                            Icons.person_rounded,
-                            size: 64,
-                            color: Color(0xFFF7EEDD),
+                        GestureDetector(
+                          onTap: _showImagePickerModal,
+                          child: Container(
+                            width: 100,
+                            height: 100,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF673D17),
+                              shape: BoxShape.circle,
+                              border: Border.all(color: Colors.white, width: 4),
+                              boxShadow: const [
+                                BoxShadow(
+                                  color: Colors.black12,
+                                  blurRadius: 10,
+                                  offset: Offset(0, 4),
+                                ),
+                              ],
+                            ),
+                            child: _profile.imagePath != null
+                                ? ClipOval(
+                                    child: Image.file(
+                                      File(_profile.imagePath!),
+                                      width: 100,
+                                      height: 100,
+                                      fit: BoxFit.cover,
+                                    ),
+                                  )
+                                : const Icon(
+                                    Icons.person_rounded,
+                                    size: 64,
+                                    color: Color(0xFFF7EEDD),
+                                  ),
                           ),
                         ),
                         Positioned(
                           bottom: 0,
                           right: 0,
                           child: GestureDetector(
-                            onTap: _editProfile,
+                            onTap: _showImagePickerModal,
                             child: Container(
                               padding: const EdgeInsets.all(8),
                               decoration: const BoxDecoration(
@@ -286,7 +394,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
               const SizedBox(height: 12),
 
-              // Pet List Cards
+              // Pet List Cards (Display real image if available)
               ...PetDataStore.petsList.map((pet) {
                 return Container(
                   margin: const EdgeInsets.only(bottom: 12),
@@ -308,16 +416,27 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       Row(
                         children: [
                           Container(
-                            padding: const EdgeInsets.all(10),
+                            width: 60,
+                            height: 60,
                             decoration: BoxDecoration(
                               color: const Color(0xFFFFF0E5),
                               borderRadius: BorderRadius.circular(14),
                             ),
-                            child: const Icon(
-                              Icons.pets_rounded,
-                              color: Color(0xFF673D17),
-                              size: 28,
-                            ),
+                            child: pet.imagePath != null
+                                ? ClipRRect(
+                                    borderRadius: BorderRadius.circular(14),
+                                    child: Image.file(
+                                      File(pet.imagePath!),
+                                      width: 60,
+                                      height: 60,
+                                      fit: BoxFit.cover,
+                                    ),
+                                  )
+                                : const Icon(
+                                    Icons.pets_rounded,
+                                    color: Color(0xFF673D17),
+                                    size: 28,
+                                  ),
                           ),
                           const SizedBox(width: 14),
                           Expanded(

@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import '../models/pet_data.dart';
 import 'feeding_screen.dart';
@@ -51,7 +52,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 icon: Icons.pets_rounded,
                 iconColor: const Color(0xFF673D17),
                 title: 'เพิ่มสัตว์เลี้ยงใหม่',
-                subtitle: 'กรอกชื่อ ประเภท รูปภาพ สายพันธุ์ เพศ น้ำหนัก และประวัติ',
+                subtitle: 'กรอกชื่อ รูปภาพ สายพันธุ์ เพศ น้ำหนัก และประวัติ',
                 onTap: () async {
                   Navigator.pop(ctx);
                   final res = await Navigator.push(
@@ -351,11 +352,12 @@ class _HomeDashboardTabState extends State<_HomeDashboardTab> {
                   ),
                 ),
                 GestureDetector(
-                  onTap: () {
-                    Navigator.push(
+                  onTap: () async {
+                    await Navigator.push(
                       context,
                       MaterialPageRoute(builder: (context) => const ProfileScreen()),
                     );
+                    setState(() {});
                   },
                   child: Container(
                     width: 48,
@@ -371,11 +373,20 @@ class _HomeDashboardTabState extends State<_HomeDashboardTab> {
                         ),
                       ],
                     ),
-                    child: const Icon(
-                      Icons.person_rounded,
-                      color: Color(0xFFF7EEDD),
-                      size: 32,
-                    ),
+                    child: profile.imagePath != null
+                        ? ClipOval(
+                            child: Image.file(
+                              File(profile.imagePath!),
+                              width: 48,
+                              height: 48,
+                              fit: BoxFit.cover,
+                            ),
+                          )
+                        : const Icon(
+                            Icons.person_rounded,
+                            color: Color(0xFFF7EEDD),
+                            size: 32,
+                          ),
                   ),
                 ),
               ],
@@ -459,7 +470,7 @@ class _HomeDashboardTabState extends State<_HomeDashboardTab> {
                 children: [
                   Row(
                     children: [
-                      // Pet Picture Box
+                      // Pet Picture Box (File Image or Illustration Fallback)
                       Container(
                         width: 90,
                         height: 90,
@@ -474,9 +485,16 @@ class _HomeDashboardTabState extends State<_HomeDashboardTab> {
                             ),
                           ],
                         ),
-                        child: const ClipRRect(
-                          borderRadius: BorderRadius.all(Radius.circular(16)),
-                          child: ShibaAvatarWidget(),
+                        child: ClipRRect(
+                          borderRadius: const BorderRadius.all(Radius.circular(16)),
+                          child: pet.imagePath != null
+                              ? Image.file(
+                                  File(pet.imagePath!),
+                                  width: 90,
+                                  height: 90,
+                                  fit: BoxFit.cover,
+                                )
+                              : const ShibaAvatarWidget(),
                         ),
                       ),
                       const SizedBox(width: 18),
@@ -815,130 +833,6 @@ class _ShibaPainter extends CustomPainter {
     // Eyebrows (Cream dots)
     canvas.drawCircle(Offset(w * 0.34, h * 0.36), w * 0.045, cream);
     canvas.drawCircle(Offset(w * 0.66, h * 0.36), w * 0.045, cream);
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
-}
-
-// Food Bowl Icon
-class BowlIconWidget extends StatelessWidget {
-  const BowlIconWidget({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return CustomPaint(painter: _BowlPainter());
-  }
-}
-
-class _BowlPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final w = size.width;
-    final h = size.height;
-
-    final bowlColor = Paint()..color = const Color(0xFFE85D36);
-    final foodColor = Paint()..color = const Color(0xFF7A4B23);
-    final shadowColor = Paint()..color = const Color(0xFFC44824);
-
-    // Food mound
-    canvas.drawOval(
-      Rect.fromCenter(center: Offset(w * 0.5, h * 0.40), width: w * 0.72, height: h * 0.36),
-      foodColor,
-    );
-
-    // Kibbles details
-    final kibble = Paint()..color = const Color(0xFF9A6233);
-    canvas.drawCircle(Offset(w * 0.38, h * 0.32), 3, kibble);
-    canvas.drawCircle(Offset(w * 0.52, h * 0.28), 3.5, kibble);
-    canvas.drawCircle(Offset(w * 0.62, h * 0.36), 3, kibble);
-
-    // Bowl Body
-    final bowlPath = Path()
-      ..moveTo(w * 0.10, h * 0.42)
-      ..lineTo(w * 0.18, h * 0.80)
-      ..quadraticBezierTo(w * 0.5, h * 0.95, w * 0.82, h * 0.80)
-      ..lineTo(w * 0.90, h * 0.42)
-      ..close();
-    canvas.drawPath(bowlPath, bowlColor);
-
-    // Bowl Rim
-    canvas.drawOval(
-      Rect.fromCenter(center: Offset(w * 0.5, h * 0.42), width: w * 0.82, height: h * 0.18),
-      shadowColor,
-    );
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
-}
-
-// Calendar Icon
-class CalendarIconWidget extends StatelessWidget {
-  const CalendarIconWidget({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return CustomPaint(painter: _CalendarPainter());
-  }
-}
-
-class _CalendarPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final w = size.width;
-    final h = size.height;
-
-    final body = Paint()..color = const Color(0xFF5C3A21);
-    final grid = Paint()..color = const Color(0xFF8C6239);
-
-    // Main Box
-    canvas.drawRRect(
-      RRect.fromRectAndRadius(
-        Rect.fromLTWH(w * 0.15, h * 0.18, w * 0.70, h * 0.68),
-        const Radius.circular(8),
-      ),
-      Paint()..color = Colors.white..style = PaintingStyle.fill,
-    );
-
-    canvas.drawRRect(
-      RRect.fromRectAndRadius(
-        Rect.fromLTWH(w * 0.15, h * 0.18, w * 0.70, h * 0.68),
-        const Radius.circular(8),
-      ),
-      body..style = PaintingStyle.stroke..strokeWidth = 2.5,
-    );
-
-    // Top Header
-    final headerPath = Path()
-      ..addRRect(RRect.fromRectAndCorners(
-        Rect.fromLTWH(w * 0.15, h * 0.18, w * 0.70, h * 0.18),
-        topLeft: const Radius.circular(8),
-        topRight: const Radius.circular(8),
-      ));
-    canvas.drawPath(headerPath, Paint()..color = const Color(0xFF8C6239));
-
-    // Rings
-    canvas.drawRect(Rect.fromLTWH(w * 0.32, h * 0.10, 3, 8), body);
-    canvas.drawRect(Rect.fromLTWH(w * 0.68, h * 0.10, 3, 8), body);
-
-    // Grid dots
-    for (int r = 0; r < 2; r++) {
-      for (int c = 0; c < 3; c++) {
-        canvas.drawRRect(
-          RRect.fromRectAndRadius(
-            Rect.fromLTWH(
-              w * 0.28 + (c * w * 0.18),
-              h * 0.44 + (r * h * 0.16),
-              w * 0.10,
-              h * 0.09,
-            ),
-            const Radius.circular(2),
-          ),
-          grid,
-        );
-      }
-    }
   }
 
   @override

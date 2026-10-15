@@ -1,14 +1,14 @@
 class PetItem {
   final String id;
   String name;
-  String category; // ประเภทสัตว์เลี้ยง e.g. 'สุนัข', 'แมว', 'กระต่าย', 'นก'
-  String breed;    // สายพันธุ์
-  String age;      // อายุ
-  String gender;   // 'ผู้ ♂' or 'เมีย ♀'
-  bool isSpayed;   // สถานะทำหมัน (เฉพาะเพศเมีย)
-  String weight;   // น้ำหนัก e.g. '8.5 กก.'
-  String history;  // ประวัติของสัตว์เลี้ยง
-  String? imagePath;
+  String category;
+  String breed;
+  String age;
+  String gender;
+  bool isSpayed;
+  String weight;
+  String history;
+  String? imagePath; // Path ไฟล์รูปภาพจริงของสัตว์เลี้ยง
 
   PetItem({
     required this.id,
@@ -44,7 +44,7 @@ class VaccineAppointmentItem {
   String date;
   int daysLeft;
   String reminderTime;
-  String type; // 'วัคซีน' or 'ตรวจสุขภาพ'
+  String type;
 
   VaccineAppointmentItem({
     required this.id,
@@ -112,11 +112,13 @@ class OwnerProfile {
   String name;
   String email;
   String phone;
+  String? imagePath; // Path ไฟล์รูปภาพจริงของเจ้าของ ID
 
   OwnerProfile({
     required this.name,
     required this.email,
     required this.phone,
+    this.imagePath,
   });
 }
 

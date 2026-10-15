@@ -45,5 +45,11 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>แอปพลิเคชันต้องการเข้าถึงคลังรูปภาพเพื่อเลือกรูปภาพสัตว์เลี้ยงและรูปโปรไฟล์</string>
+	<key>NSCameraUsageDescription</key>
+	<string>แอปพลิเคชันต้องการเข้าถึงกล้องถ่ายรูปเพื่อถ่ายภาพสัตว์เลี้ยงและรูปโปรไฟล์</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>แอปพลิเคชันต้องการเข้าถึงไมโครโฟนสำหรับการบันทึกวิดีโอ</string>
 </dict>
 </plist>
