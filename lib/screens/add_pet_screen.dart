@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import '../models/pet_data.dart';
@@ -59,7 +58,7 @@ class _AddPetScreenState extends State<AddPetScreen> {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text('แนบรูปภาพสัตว์เลี้ยงจากคลังภาพสำเร็จแล้ว'),
+              content: Text('แนบรูปภาพสัตว์เลี้ยงสำเร็จแล้ว'),
               backgroundColor: Color(0xFF673D17),
             ),
           );
@@ -166,7 +165,7 @@ class _AddPetScreenState extends State<AddPetScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // 1. Pet Image Upload Box (Real Gallery/Camera Picker)
+                // 1. Pet Image Upload Box (Universal Web / Mobile Support)
                 Center(
                   child: Column(
                     children: [
@@ -193,8 +192,8 @@ class _AddPetScreenState extends State<AddPetScreen> {
                           child: _imagePath != null
                               ? ClipRRect(
                                   borderRadius: BorderRadius.circular(22),
-                                  child: Image.file(
-                                    File(_imagePath!),
+                                  child: buildAppImage(
+                                    imagePath: _imagePath!,
                                     width: 120,
                                     height: 120,
                                     fit: BoxFit.cover,

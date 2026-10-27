@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import '../models/pet_data.dart';
@@ -16,13 +15,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
   final OwnerProfile _profile = PetDataStore.currentProfile;
   final ImagePicker _picker = ImagePicker();
 
-  // Map to control individual eye toggle visibility for owner and pet items
   bool _isOwnerNameVisible = true;
   bool _isOwnerEmailVisible = true;
   bool _isOwnerPhoneVisible = true;
   bool _isMasterOwnerVisible = true;
 
-  // Visibility map for pets (key = pet.id)
   final Map<String, bool> _petVisibilityMap = {};
 
   bool _isPetVisible(String petId) {
@@ -48,7 +45,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     if (isVisible) return text;
     if (text.trim().isEmpty) return '••••';
 
-    // Email masking: e.g. ggez.petowner@gmail.com -> g••••@gmail.com
     if (text.contains('@')) {
       final parts = text.split('@');
       final user = parts[0];
@@ -59,17 +55,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
       return '••••@$domain';
     }
 
-    // Phone masking: e.g. 081-234-5678 -> 081-***-****
     if (RegExp(r'^[0-9\-\s]+$').hasMatch(text) && text.length >= 8) {
       return '${text.substring(0, 3)}-***-****';
     }
 
-    // Name masking: e.g. คุณ GGez -> คุณ G••••
     if (text.startsWith('คุณ ') && text.length > 5) {
       return 'คุณ ${text.substring(4, 5)}••••';
     }
 
-    // Short text masking
     if (text.length <= 4) {
       return '••••';
     }
@@ -88,7 +81,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
       if (picked != null) {
         setState(() {
           _profile.imagePath = picked.path;
+          PetDataStore.currentUser.profileImagePath = picked.path;
         });
+        PetDataStore.saveToStorage();
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
@@ -206,7 +201,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
                 const SizedBox(height: 18),
 
-                // Owner Name
                 _buildEditTextField(
                   controller: nameController,
                   label: 'ชื่อเจ้าของ ID',
@@ -214,7 +208,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
                 const SizedBox(height: 12),
 
-                // Email
                 _buildEditTextField(
                   controller: emailController,
                   label: 'อีเมล',
@@ -223,7 +216,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
                 const SizedBox(height: 12),
 
-                // Phone
                 _buildEditTextField(
                   controller: phoneController,
                   label: 'เบอร์โทรศัพท์',
@@ -232,7 +224,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
                 const SizedBox(height: 24),
 
-                // Submit Button
                 SizedBox(
                   height: 50,
                   child: ElevatedButton(
@@ -241,7 +232,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         _profile.name = nameController.text.trim();
                         _profile.email = emailController.text.trim();
                         _profile.phone = phoneController.text.trim();
+
+                        PetDataStore.currentUser.fullName = _profile.name;
+                        PetDataStore.currentUser.email = _profile.email;
+                        PetDataStore.currentUser.phone = _profile.phone;
                       });
+
+                      PetDataStore.saveToStorage();
 
                       Navigator.of(context).pop();
                       ScaffoldMessenger.of(context).showSnackBar(
@@ -350,8 +347,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             ),
                             child: _profile.imagePath != null
                                 ? ClipOval(
-                                    child: Image.file(
-                                      File(_profile.imagePath!),
+                                    child: buildAppImage(
+                                      imagePath: _profile.imagePath!,
                                       width: 100,
                                       height: 100,
                                       fit: BoxFit.cover,
@@ -450,7 +447,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     const Divider(color: Color(0xFFE8DCCB), height: 10),
                     const SizedBox(height: 10),
 
-                    // Owner Name Row with Eye Button
+                    // Owner Name Row
                     _buildToggleableInfoRow(
                       icon: Icons.person_outline_rounded,
                       label: 'ชื่อเจ้าของ',
@@ -463,7 +460,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       },
                     ),
 
-                    // Email Row with Eye Button
+                    // Email Row
                     _buildToggleableInfoRow(
                       icon: Icons.email_outlined,
                       label: 'อีเมล',
@@ -476,7 +473,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       },
                     ),
 
-                    // Phone Row with Eye Button
+                    // Phone Row
                     _buildToggleableInfoRow(
                       icon: Icons.phone_android_outlined,
                       label: 'เบอร์โทรศัพท์',
@@ -530,7 +527,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
               const SizedBox(height: 12),
 
-              // Pet List Cards with Individual Eye Buttons
+              // Pet List Cards
               ...PetDataStore.petsList.map((pet) {
                 final isPetVisible = _isPetVisible(pet.id);
 
@@ -563,8 +560,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             child: pet.imagePath != null
                                 ? ClipRRect(
                                     borderRadius: BorderRadius.circular(14),
-                                    child: Image.file(
-                                      File(pet.imagePath!),
+                                    child: buildAppImage(
+                                      imagePath: pet.imagePath!,
                                       width: 60,
                                       height: 60,
                                       fit: BoxFit.cover,
@@ -624,7 +621,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             ),
                           ),
 
-                          // Eye Toggle Button for this specific Pet
+                          // Eye Toggle Button
                           IconButton(
                             icon: Icon(
                               isPetVisible
@@ -688,6 +685,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 height: 50,
                 child: OutlinedButton.icon(
                   onPressed: () {
+                    PetDataStore.logout();
                     Navigator.pushAndRemoveUntil(
                       context,
                       MaterialPageRoute(builder: (context) => const LoginScreen()),

@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
+import 'models/pet_data.dart';
 import 'screens/login.dart';
+import 'screens/home_screen.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await PetDataStore.loadFromStorage();
   runApp(const PetCareApp());
 }
 
@@ -10,6 +14,9 @@ class PetCareApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Check if user is already logged in from previous session
+    final bool isAlreadyLoggedIn = PetDataStore.currentUserAccount != null;
+
     return MaterialApp(
       title: 'PetCare',
       debugShowCheckedModeBanner: false,
@@ -21,7 +28,7 @@ class PetCareApp extends StatelessWidget {
         useMaterial3: true,
         scaffoldBackgroundColor: const Color(0xFFF7EEDD),
       ),
-      home: const LoginScreen(),
+      home: isAlreadyLoggedIn ? const HomeScreen() : const LoginScreen(),
     );
   }
 }

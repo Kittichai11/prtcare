@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import '../models/pet_data.dart';
 import 'feeding_screen.dart';
@@ -379,8 +378,8 @@ class _HomeDashboardTabState extends State<_HomeDashboardTab> {
                     ),
                     child: profile.imagePath != null
                         ? ClipOval(
-                            child: Image.file(
-                              File(profile.imagePath!),
+                            child: buildAppImage(
+                              imagePath: profile.imagePath!,
                               width: 48,
                               height: 48,
                               fit: BoxFit.cover,
@@ -499,8 +498,8 @@ class _HomeDashboardTabState extends State<_HomeDashboardTab> {
                                   child: ClipRRect(
                                     borderRadius: const BorderRadius.all(Radius.circular(16)),
                                     child: activePet.imagePath != null
-                                        ? Image.file(
-                                            File(activePet.imagePath!),
+                                        ? buildAppImage(
+                                            imagePath: activePet.imagePath!,
                                             width: 90,
                                             height: 90,
                                             fit: BoxFit.cover,
@@ -681,7 +680,7 @@ class _HomeDashboardTabState extends State<_HomeDashboardTab> {
             ),
             const SizedBox(height: 16),
 
-            // Card 1: เวลาการให้อาหาร (Dynamic: Only show time if set!)
+            // Card 1: เวลาการให้อาหาร
             _buildReminderCard(
               context: context,
               iconWidget: Container(
@@ -715,7 +714,7 @@ class _HomeDashboardTabState extends State<_HomeDashboardTab> {
             ),
             const SizedBox(height: 14),
 
-            // Card 2: นัดพบสัตวแพทย์ (Dynamic: Only show date if set!)
+            // Card 2: นัดพบสัตวแพทย์
             _buildReminderCard(
               context: context,
               iconWidget: Container(
@@ -747,7 +746,7 @@ class _HomeDashboardTabState extends State<_HomeDashboardTab> {
             ),
             const SizedBox(height: 14),
 
-            // Card 3: PETS Walking (Dynamic: Only show time if set!)
+            // Card 3: PETS Walking
             _buildReminderCard(
               context: context,
               iconWidget: Container(
