@@ -1,4 +1,6 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import '../models/pet_data.dart';
 
 class AddPetScreen extends StatefulWidget {
@@ -18,8 +20,10 @@ class _AddPetScreenState extends State<AddPetScreen> {
 
   String _selectedCategory = 'สุนัข';
   String _selectedGender = 'ผู้ ♂';
-  bool _isSpayed = false; // สถานะทำหมันสำหรับเพศเมีย
-  bool _hasCustomImage = false;
+  bool _isSpayed = false;
+  String? _imagePath;
+
+  final ImagePicker _picker = ImagePicker();
 
   final List<String> _categories = [
     'สุนัข',
@@ -40,15 +44,96 @@ class _AddPetScreenState extends State<AddPetScreen> {
     super.dispose();
   }
 
-  void _selectImage() {
-    setState(() {
-      _hasCustomImage = true;
-    });
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('เลือกรูปภาพสัตว์เลี้ยงเรียบร้อยแล้ว'),
-        backgroundColor: Color(0xFF673D17),
+  Future<void> _pickImage(ImageSource source) async {
+    try {
+      final XFile? picked = await _picker.pickImage(
+        source: source,
+        maxWidth: 1000,
+        maxHeight: 1000,
+        imageQuality: 85,
+      );
+      if (picked != null) {
+        setState(() {
+          _imagePath = picked.path;
+        });
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('แนบรูปภาพสัตว์เลี้ยงจากคลังภาพสำเร็จแล้ว'),
+              backgroundColor: Color(0xFF673D17),
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('ไม่สามารถดึงรูปภาพได้: $e'),
+            backgroundColor: Colors.red[700],
+          ),
+        );
+      }
+    }
+  }
+
+  void _showImagePickerModal() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: const Color(0xFFF7EEDD),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
+      builder: (ctx) {
+        return Padding(
+          padding: const EdgeInsets.all(20.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                'เลือกรูปภาพสัตว์เลี้ยง',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF5C3A21),
+                ),
+              ),
+              const SizedBox(height: 16),
+              ListTile(
+                leading: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: const BoxDecoration(
+                    color: Color(0xFFFFF0E5),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.photo_library_rounded, color: Color(0xFF673D17)),
+                ),
+                title: const Text('เลือกจากคลังรูปภาพ (Gallery)', style: TextStyle(fontWeight: FontWeight.bold)),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  _pickImage(ImageSource.gallery);
+                },
+              ),
+              ListTile(
+                leading: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: const BoxDecoration(
+                    color: Color(0xFFEBF5FF),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.camera_alt_rounded, color: Color(0xFF2B78C5)),
+                ),
+                title: const Text('ถ่ายภาพด้วยกล้อง (Camera)', style: TextStyle(fontWeight: FontWeight.bold)),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  _pickImage(ImageSource.camera);
+                },
+              ),
+              const SizedBox(height: 10),
+            ],
+          ),
+        );
+      },
     );
   }
 
@@ -81,12 +166,12 @@ class _AddPetScreenState extends State<AddPetScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // 1. Pet Image Upload Box
+                // 1. Pet Image Upload Box (Real Gallery/Camera Picker)
                 Center(
                   child: Column(
                     children: [
                       GestureDetector(
-                        onTap: _selectImage,
+                        onTap: _showImagePickerModal,
                         child: Container(
                           width: 120,
                           height: 120,
@@ -105,38 +190,14 @@ class _AddPetScreenState extends State<AddPetScreen> {
                               ),
                             ],
                           ),
-                          child: _hasCustomImage
+                          child: _imagePath != null
                               ? ClipRRect(
                                   borderRadius: BorderRadius.circular(22),
-                                  child: Stack(
-                                    children: [
-                                      Container(
-                                        color: const Color(0xFFFFF0E5),
-                                        child: const Center(
-                                          child: Icon(
-                                            Icons.pets_rounded,
-                                            size: 64,
-                                            color: Color(0xFF673D17),
-                                          ),
-                                        ),
-                                      ),
-                                      Positioned(
-                                        bottom: 4,
-                                        right: 4,
-                                        child: Container(
-                                          padding: const EdgeInsets.all(4),
-                                          decoration: const BoxDecoration(
-                                            color: Color(0xFF673D17),
-                                            shape: BoxShape.circle,
-                                          ),
-                                          child: const Icon(
-                                            Icons.check_rounded,
-                                            size: 16,
-                                            color: Colors.white,
-                                          ),
-                                        ),
-                                      ),
-                                    ],
+                                  child: Image.file(
+                                    File(_imagePath!),
+                                    width: 120,
+                                    height: 120,
+                                    fit: BoxFit.cover,
                                   ),
                                 )
                               : const Column(
@@ -162,11 +223,11 @@ class _AddPetScreenState extends State<AddPetScreen> {
                       ),
                       const SizedBox(height: 8),
                       TextButton.icon(
-                        onPressed: _selectImage,
+                        onPressed: _showImagePickerModal,
                         icon: const Icon(Icons.photo_library_outlined, size: 18),
-                        label: const Text(
-                          'เลือกรูปภาพจากคลังรูปภาพ',
-                          style: TextStyle(color: Color(0xFF673D17)),
+                        label: Text(
+                          _imagePath != null ? 'เปลี่ยนรูปภาพสัตว์เลี้ยง' : 'เลือกรูปภาพจากคลังรูปภาพในเครื่อง',
+                          style: const TextStyle(color: Color(0xFF673D17), fontWeight: FontWeight.bold),
                         ),
                       ),
                     ],
@@ -174,7 +235,7 @@ class _AddPetScreenState extends State<AddPetScreen> {
                 ),
                 const SizedBox(height: 16),
 
-                // 2. Pet Category Selection (จำแนกประเภทสัตว์เลี้ยง)
+                // 2. Pet Category Selection
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
@@ -335,7 +396,7 @@ class _AddPetScreenState extends State<AddPetScreen> {
                         ],
                       ),
 
-                      // Conditional Spayed/Sterilized Status Toggle (Only appears when เพศเมีย ♀ is selected)
+                      // Conditional Spayed Status Toggle
                       if (_selectedGender == 'เมีย ♀') ...[
                         const SizedBox(height: 12),
                         Container(
@@ -380,7 +441,7 @@ class _AddPetScreenState extends State<AddPetScreen> {
                               ),
                               Switch(
                                 value: _isSpayed,
-                                activeColor: const Color(0xFFE84A5F),
+                                activeTrackColor: const Color(0xFFE84A5F),
                                 onChanged: (val) {
                                   setState(() {
                                     _isSpayed = val;
@@ -411,7 +472,7 @@ class _AddPetScreenState extends State<AddPetScreen> {
                 ),
                 const SizedBox(height: 14),
 
-                // 7. Pet Weight Input (ช่องใส่น้ำหนักของสัตว์)
+                // 7. Pet Weight Input
                 _buildInputField(
                   controller: _weightController,
                   label: 'น้ำหนักสัตว์เลี้ยง',
@@ -470,6 +531,7 @@ class _AddPetScreenState extends State<AddPetScreen> {
                           isSpayed: _selectedGender == 'เมีย ♀' ? _isSpayed : false,
                           weight: weightText,
                           history: historyText,
+                          imagePath: _imagePath,
                         );
 
                         setState(() {
